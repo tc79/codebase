@@ -4,28 +4,13 @@ import logging.config
 import yaml
 import sys
 
-
-def get_debug_level(debug_level):
-    """Transform debug level from string to logging flags.
-    
-    Args:
-        debug_level (str): Debug level as string.
-    
-    Returns:
-        int: Debug level as logging flag.
-    """
-    if debug_level == "INFO":
-        return logging.INFO
-    elif debug_level == "DEBUG":
-        return logging.DEBUG
-    elif debug_level == "WARNING":
-        return logging.WARNING
-    elif debug_level == "ERROR":
-        return logging.ERROR
-    elif debug_level == "CRITICAL":
-        return logging.CRITICAL
-    else:
-        return None
+LEVEL = {
+    "INFO": logging.INFO,
+    "DEBUG": logging.DEBUG,
+    "WARNING": logging.WARNING,
+    "ERROR": logging.ERROR,
+    "CRITICAL": logging.CRITICAL
+}
 
 
 def disable_existing_loggers(logger_name):
@@ -67,14 +52,15 @@ def setup_logger(debug_level="ERROR", config_file=""):
         >>> log = setup_logger(debug_level='INFO')
         >>> log.debug("Debug log_base") #doctest: +ELLIPSIS
         20... DEBUG [<doctest python.log_base.logger.setup_logger[8]>:1]: Debug log_base
+    
     """
-    level = get_debug_level(debug_level)
+    level = LEVEL.get(debug_level, None)
 
     # Get environment debug level if it is defined (then overwrite level in code)
-    env_debug_level = "DEBUG_LEVEL"
-    env_level = os.getenv(env_debug_level, None)
-    if env_level and get_debug_level(env_level) is not None:
-        level = get_debug_level(env_level)
+    env = os.getenv("DEBUG_LEVEL", None)
+    env_level = LEVEL.get(env, None)
+    if env_level is not None:
+        level = env_level
 
     # Get logger
     log = logging.getLogger()
