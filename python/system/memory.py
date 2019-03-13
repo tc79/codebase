@@ -5,17 +5,12 @@ from numba import cuda
 from numba.cuda.cudadrv.error import CudaSupportError
 
 
-def _manage_memory_units(data_in_bytes, units):
-    if units == "bytes":
-        return data_in_bytes
-    elif units == "Kb":
-        return data_in_bytes / 1024
-    elif units == "Mb":
-        return data_in_bytes / 1024 / 1024
-    elif units == "Gb":
-        return data_in_bytes / 1024 / 1024 / 1024
-    else:
-        raise AttributeError("Units not correct")
+decode_memory = {
+    "bytes": lambda x: x, 
+    "Kb": lambda x: x / 1024
+    "Mb": lambda x: x / 1024 / 1024
+    "Gb": lambda x: x / 1024 / 1024 / 1024
+}
 
 
 def get_object_size(obj, units="Mb"):
@@ -35,7 +30,7 @@ def get_object_size(obj, units="Mb"):
         52
     """
     s_bytes = sys.getsizeof(obj)
-    return _manage_memory_units(s_bytes, units)
+    return decode_memory.get(s_bytes)(units)
 
 
 def get_ram_memory(units="Mb"):
@@ -53,7 +48,7 @@ def get_ram_memory(units="Mb"):
         True
     """
     s_bytes = psutil.virtual_memory()[0]
-    return _manage_memory_units(s_bytes, units)
+    return decode_memory.get(s_bytes)(units)
 
 
 def get_total_gpu_memory(units="Mb"):
@@ -71,7 +66,7 @@ def get_total_gpu_memory(units="Mb"):
         for gpu in cuda.gpus:
             with gpu:
                 meminfo = cuda.current_context().get_memory_info()
-                memory_list.append(_manage_memory_units(meminfo[1], units))
+                memory_list.append(decode_memory.get(meminfo[1])(units))
         return memory_list
     except CudaSupportError:
         return []
@@ -92,7 +87,7 @@ def get_free_gpu_memory(units="Mb"):
         for gpu in cuda.gpus:
             with gpu:
                 meminfo = cuda.current_context().get_memory_info()
-                memory_list.append(_manage_memory_units(meminfo[0], units))
+                memory_list.append(decode_memory.get(meminfo[0])(units))
         return memory_list
     except CudaSupportError:
         return []
